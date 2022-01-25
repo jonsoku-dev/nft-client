@@ -1,20 +1,21 @@
-import type { NextPage } from 'next';
-import type { AppProps } from 'next/app';
+import { AppContext, AppInitialProps, AppLayoutProps } from 'next/app';
+import type { NextComponentType } from 'next';
+import { ReactNode } from 'react';
+import { useApollo } from '../lib/apollo';
 import { ApolloProvider } from '@apollo/client';
 
-import '../lib/i18n';
-import { useApollo } from '../lib/apollo';
-
-import 'normalize.css/normalize.css';
-
-const App: NextPage<AppProps> = ({ Component, pageProps }) => {
+const MyApp: NextComponentType<AppContext, AppInitialProps, AppLayoutProps> = ({
+                                                                                 Component,
+                                                                                 pageProps,
+                                                                               }: AppLayoutProps) => {
+  const getLayout = Component.getLayout || ((page: ReactNode) => page);
   const apolloClient = useApollo(pageProps);
 
   return (
     <ApolloProvider client={apolloClient}>
-      <Component {...pageProps} />
+      {getLayout(<Component {...pageProps} />)}
     </ApolloProvider>
   );
 };
 
-export default App;
+export default MyApp;

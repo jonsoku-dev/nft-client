@@ -3,10 +3,10 @@ import merge from 'deepmerge';
 import cookie from 'cookie';
 import type { GetServerSidePropsContext } from 'next';
 import type { IncomingMessage } from 'http';
-import type { NormalizedCacheObject } from '@apollo/client';
-import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
+import { ApolloClient, gql, HttpLink, InMemoryCache, NormalizedCacheObject } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import isEqual from 'lodash.isequal';
+
 
 interface PageProps {
   props?: Record<string, any>;
@@ -25,7 +25,22 @@ const getToken = (req?: IncomingMessage) => {
 
 let apolloClient: ApolloClient<NormalizedCacheObject> = null;
 
+export const IS_LOGGED_IN = gql`
+  query IsUserLoggedIn {
+    isLoggedIn @client
+  }
+`;
+
 const createApolloClient = (ctx?: GetServerSidePropsContext) => {
+  const cache = new InMemoryCache();
+
+  cache.writeQuery({
+    query: IS_LOGGED_IN,
+    data: {
+      isLoggedIn: process.browser ? !!localStorage.getItem("token") : false,
+    },
+  });
+
   const httpLink = new HttpLink({
     uri: process.env.NEXT_PUBLIC_GRAPHQL_URI,
     credentials: 'same-origin',
@@ -44,9 +59,10 @@ const createApolloClient = (ctx?: GetServerSidePropsContext) => {
   });
 
   return new ApolloClient({
+    cache,
     ssrMode: typeof window === 'undefined',
     link: authLink.concat(httpLink),
-    cache: new InMemoryCache(),
+    resolvers: {},
   });
 };
 
